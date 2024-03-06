@@ -1,35 +1,60 @@
 .model tiny
+.data
 
-.DATA
-    FileName    DB  "TEST.RES",0
-    Buffer      DB  "Hello, world!",0
-.code   
-ORG 0100h
+inputFileName db 'Hello.txt', 0
+outputFileName db 'TEST.RES', 0
+buffer db 255 dup(?) ; Буфер для читання файлу
+bytes_read dw ? ; Кількість прочитаних байт
+
+
+.code
+ORG 100h
 start:
-    ; Open the file
-        MOV AH, 3Ch      ; Function 3Ch - Create or open file
-        MOV CX, 0        ; Access mode (0 = Read/Write)
-        LEA DX, FileName ; Load the address of the file name
-        INT 21h          ; Call DOS interrupt
+    mov ax, cs
+    mov ds, ax
 
-        ; Store the file handle in BX
-        MOV BX, AX
+    ; Встановлення DTA (Disk Transfer Address)
+    mov ah, 1Ah
+    mov dx, offset buffer
+    int 21h
 
-        ; Write to the file
-        MOV AH, 40h      ; Function 40h - Write to file
-        MOV CX, 14       ; Number of bytes to write
-        LEA DX, Buffer   ; Load the address of the buffer
-        INT 21h          ; Call DOS interrupt
+    ; Відкриття файлу для читання
+    mov ah, 3Dh
+    mov al, 0 ; режим читання
+    lea dx, inputFileName
+    int 21h
+    mov bx, ax ; зберігаємо дескриптор файлу
 
-        ; Close the file
-        MOV AH, 3Eh      ; Function 3Eh - Close file
-        MOV BX, AX       ; Move the file handle to BX
-        INT 21h          ; Call DOS interrupt
+    ; Читання з файлу
+    mov ah, 3Fh
+    mov cx, 255 ; читаємо 255 байт
+    mov dx, offset buffer
+    int 21h
+    mov bytes_read, ax ; Збереження кількості прочитаних байт
 
-        ; Exit the program
-        MOV AH, 4Ch      ; Function 4Ch - Exit program
-        INT 21h          ; Call DOS interrupt
+    ; Закриття файлу
+    mov ah, 3Eh
+    int 21h
 
+    ; Відкриття/створення файлу для запису
+    mov ah, 3Ch
+    mov cx, 0
+    lea dx, outputFileName
+    int 21h
+    mov bx, ax ; дескриптор файлу для запису
+
+    ; Запис у файл
+    lea dx, buffer
+    mov ah, 40h
+    mov cx, bytes_read ; кількість прочитаних байт
+    int 21h
+
+    ; Закриття файлу
+    mov ah, 3Eh
+    int 21h
+
+    ; Вихід з програми
+    mov ax, 4C00h
+    int 21h
 
 end start
-
