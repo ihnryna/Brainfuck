@@ -1,32 +1,53 @@
 .model tiny
 .data
 
-inputFileName db 'TEST4.B', 0
+inputFileName db 'TEST1.B', 0
 buffer db 10000 dup(?) ; Буфер для читання файлу
 array db 10000 dup(0) ;
 msg db ? ; 
 bytes_read dw ? ; Кількість прочитаних байт
 file_handler dw ?
 brackets db 0
-filename db 15 dup(?)
+filename db 7 dup(?)
+myfilename db 8 dup(?)
 
 .code
 ORG 100h
 start:
 
 reading:
-    ; Read string from command line
-    ;mov ah, 0Ah
-    ;lea dx, filename
+    ; ds = PSP
+    ; copy param
+    xor ch,ch
+    mov cl, ds:[80h]   ; at offset 80h length of "args"
+    mov bx, 7
+write_char:
+    test cl, cl
+    jz write_end
+    mov si, 81h        ; at offest 81h first char of "args"
+    add si, cx
+    ;mov ah, 02h
+    mov dl, ds:[si]
+    mov [filename+bx], dl
+    dec bx
     ;int 21h
+    dec cl
+    jmp write_char
+write_end:
 
-    ; Display the string
-    ;mov ah, 09h
-    ;lea dx, filename+2 ; Offset 2 bytes to skip over the length field
-    ;int 21h
+    mov bx, 0
+writing_loop:
+    mov dl, [filename + bx]
+    mov [myfilename+bx], dl
+    inc bx
+    cmp bx, 6
+    jle writing_loop
+    mov dl, 0
+    mov [myfilename+bx], dl
 
-    ;mov ax, cs
-    ;mov ds, ax
+
+    mov ax, cs
+    mov ds, ax
     ; Встановлення DTA (Disk Transfer Address)
     mov ah, 1Ah
     mov dx, offset buffer
@@ -34,7 +55,7 @@ reading:
     ; Відкриття файлу для читання
     mov ah, 3Dh
     mov al, 0 ; режим читання
-    lea dx, inputFileName
+    lea dx, myfilename
     int 21h
     mov bx, ax ; зберігаємо дескриптор файлу
     ; Читання з файлу
