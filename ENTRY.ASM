@@ -3,7 +3,7 @@
 
 inputFileName db 'TEST1.B', 0
 buffer db 10000 dup(?) ; Буфер для читання файлу
-array db 10000 dup(0) ;
+array dw 10000 dup(0) ;
 msg db ? ; 
 bytes_read dw ? ; Кількість прочитаних байт
 file_handler dw ?
@@ -95,7 +95,7 @@ array_loop:
     je case_open
 
     cmp al, ']'
-    je case_close
+    je case_close_link
 
     ;JMP default_case
 
@@ -108,56 +108,72 @@ array_loop_continue:
 case_1:
     ;MOV array[12], 66
     inc bx
+    inc bx
     jmp array_loop_continue
 
 case_2:
+    dec bx
     dec bx
     jmp array_loop_continue
 
 case_3:
     push ax
-    MOV al, array[bx]
-    INC al
-    MOV array[bx], al
+    MOV ax, array[bx]
+    INC ax
+    MOV array[bx], ax
     pop ax
     jmp array_loop_continue
 
 case_4:
     push ax
-    MOV al, array[bx]
-    dec al
-    MOV array[bx], al
+    MOV ax, array[bx]
+    dec ax
+    MOV array[bx], ax
     pop ax
     jmp array_loop_continue
 
 case_5:
     push ax
-
-    ; output
-    mov dl, [array + bx]
+    mov dx, [array + bx]
+    cmp dx, 0Dh
+    je array_loop_continue
+    cmp dx, 0Ah
+    jne go
+    mov dx, 0Dh
     mov ah, 02h
     int 21h
-
+go:
+    ; output
+    mov dx, [array + bx]
+    mov ah, 02h
+    int 21h
     pop ax
-
     jmp array_loop_continue
+
+case_close_link:
+    jmp case_close
 
 case_6:
     push ax
     push bx
     mov ah, 3Fh
-    mov dl, [array+bx]   ; read to ds:dx 
+    lea dx, [array+bx]   ; read to ds:dx 
     mov bx, 0h  ; stdin handle
     mov cx, 1   ; 1 byte to read
-    int 21h
+    int 21h   ;  ax = number of bytes read
+
     pop bx
+    cmp ax, 0
+    jne noput
+    mov [array+bx], -1
+noput:
     pop ax
     jmp array_loop_continue
 
 case_open:
     push ax
-    MOV al, array[bx]
-    cmp al, 0
+    MOV ax, array[bx]
+    cmp ax, 0
     jne cont
     inc brackets
 brackets_loop:
@@ -173,8 +189,8 @@ brackets_loop:
 
 case_close:
     push ax
-    MOV al, array[bx]
-    cmp al, 0
+    MOV ax, array[bx]
+    cmp ax, 0
     je cont2
     MOV al, [buffer + SI]     
     CMP AL, ']'
