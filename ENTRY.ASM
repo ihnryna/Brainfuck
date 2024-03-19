@@ -1,15 +1,13 @@
 .model tiny
 .data
 
-inputFileName db 'TEST1.B', 0
 buffer db 10000 dup(?) ; Буфер для читання файлу
-array dw 10000 dup(0) ;
-msg db ? ; 
+array dw 10000 dup(?) 
 bytes_read dw ? ; Кількість прочитаних байт
-file_handler dw ?
+bytes dw ?
 brackets db 0
-filename db 7 dup(?)
-myfilename db 8 dup(?)
+filename db 80 dup(?)
+myfilename db 80 dup(?)
 
 .code
 ORG 100h
@@ -20,31 +18,35 @@ reading:
     ; copy param
     xor ch,ch
     mov cl, ds:[80h]   ; at offset 80h length of "args"
-    mov bx, 7
+    mov bx, 0
 write_char:
     test cl, cl
     jz write_end
     mov si, 81h        ; at offest 81h first char of "args"
     add si, cx
-    ;mov ah, 02h
     mov dl, ds:[si]
+    cmp dl, 0Dh
+    jne noputzero
+    mov dl, 0
+noputzero:
     mov [filename+bx], dl
-    dec bx
-    ;int 21h
+    inc bx
     dec cl
     jmp write_char
 write_end:
 
+    mov bytes, bx
     mov bx, 0
 writing_loop:
     mov dl, [filename + bx]
+    push bx
+    sub bx,bytes
+    neg bx
     mov [myfilename+bx], dl
+    pop bx
     inc bx
-    cmp bx, 6
+    cmp bx, bytes
     jle writing_loop
-    mov dl, 0
-    mov [myfilename+bx], dl
-
 
     mov ax, cs
     mov ds, ax
@@ -56,6 +58,7 @@ writing_loop:
     mov ah, 3Dh
     mov al, 0 ; режим читання
     lea dx, myfilename
+    inc dx
     int 21h
     mov bx, ax ; зберігаємо дескриптор файлу
     ; Читання з файлу
@@ -96,8 +99,6 @@ array_loop:
 
     cmp al, ']'
     je case_close_link
-
-    ;JMP default_case
 
 array_loop_continue:    
     INC SI                 ; Перемістимо вказівник на наступний елемент масиву
@@ -156,6 +157,7 @@ case_close_link:
 case_6:
     push ax
     push bx
+    and [array+bx], 0
     mov ah, 3Fh
     lea dx, [array+bx]   ; read to ds:dx 
     mov bx, 0h  ; stdin handle
@@ -237,11 +239,7 @@ dec_br2:
     dec brackets
     jmp brackets_loop2
 
-default_case:
-    jmp array_loop_continue
-
 ending:
-
     ; Вихід з програми
     mov ax, 4C00h
     int 21h
