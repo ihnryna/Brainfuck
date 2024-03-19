@@ -1,13 +1,9 @@
 .model tiny
 .data
-
-buffer db 10000 dup(?) ; Буфер для читання файлу
 array dw 10000 dup(?) 
+buffer db 10000 dup(?) ; Буфер для читання файлу
 bytes_read dw ? ; Кількість прочитаних байт
-bytes dw ?
-brackets db 0
-filename db 80 dup(?)
-myfilename db 80 dup(?)
+brackets db ?
 
 .code
 ORG 100h
@@ -27,40 +23,30 @@ write_char:
     mov dl, ds:[si]
     cmp dl, 0Dh
     jne noputzero
-    mov dl, 0
+    mov byte ptr ds:[si], 0
 noputzero:
-    mov [filename+bx], dl
-    inc bx
     dec cl
     jmp write_char
+
+;myloop:
+ ;   mov byte ptr [di], 0
+  ;  inc di
+   ; loop myloop
+
 write_end:
-
-    mov bytes, bx
-    mov bx, 0
-writing_loop:
-    mov dl, [filename + bx]
-    push bx
-    sub bx,bytes
-    neg bx
-    mov [myfilename+bx], dl
-    pop bx
-    inc bx
-    cmp bx, bytes
-    jle writing_loop
-
-    mov ax, cs
-    mov ds, ax
-    ; Встановлення DTA (Disk Transfer Address)
-    mov ah, 1Ah
-    mov dx, offset buffer
-    int 21h
     ; Відкриття файлу для читання
     mov ah, 3Dh
     mov al, 0 ; режим читання
-    lea dx, myfilename
-    inc dx
+    mov dx, 82h
+    ;inc dx
     int 21h
     mov bx, ax ; зберігаємо дескриптор файлу
+
+    lea di, array
+    mov cx, 30003
+    xor ax, ax
+    rep stosb
+
     ; Читання з файлу
     mov ah, 3Fh
     mov cx, 10000 ; читаємо 10000 байт
@@ -107,7 +93,6 @@ array_loop_continue:
     jmp ending
 
 case_1:
-    ;MOV array[12], 66
     inc bx
     inc bx
     jmp array_loop_continue
