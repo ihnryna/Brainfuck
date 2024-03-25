@@ -12,22 +12,16 @@ start:
 reading:
     ; ds = PSP
     ; copy param
-    ;xor ch,ch
     mov cl, ds:[80h]   ; at offset 80h length of "args"
     xor bx, bx
 write_char:
     test cl, cl
-    ;jz write_end
     mov si, 81h        ; at offest 81h first char of "args"
     add si, cx
     mov dl, ds:[si]
-    ;cmp dl, 0Dh
-    ;jne noputzero
     mov byte ptr ds:[si], 0
-;noputzero:
-    ;dec cl
-    ;jmp short write_char
-;write_end:
+
+
     ; Відкриття файлу для читання
     mov ah, 3Dh
     xor al, al ; режим читання
@@ -99,7 +93,7 @@ next3:
     cmp AL, ','
     jne next4 ;,
     push bx
-    and [bx], 0
+    and [bx], 0 
     mov ah, 3Fh
     lea dx, [bx]
     mov bx, 0h  ; stdin handle
@@ -129,7 +123,7 @@ array_loop_continue:
 
 case_open:
     cmp [bx], 0
-    jne array_loop_continue
+    jne array_loop_continue_br
     inc brackets
 brackets_loop:
     cmp brackets,0
@@ -142,38 +136,24 @@ brackets_loop:
     jne short brackets_loop
     dec brackets
     jmp short brackets_loop
+array_loop_continue_br:
+    push SI
+    jmp array_loop_continue
 
 case_close:
     cmp [bx], 0
     je cont2
-    MOV al, [SI]  
-    CMP AL, ']'
-    jne brackets_loop2
-    inc brackets
-brackets_loop2:
-    cmp brackets, 0
-    je cont3
+    pop SI
     dec SI
-    MOV al, [SI] 
-    CMP AL, '['
-    je dec_br2
-    CMP AL, ']'
-    jne short brackets_loop2
-    inc brackets
-    jmp short brackets_loop2
+    jmp array_loop_continue
 
 inc_br:
     inc brackets
     jmp brackets_loop
 
 cont2:
-    jmp array_loop_continue
-cont3:
-    dec SI
+    pop ax
     jmp array_loop_continue
 
-dec_br2:
-    dec brackets
-    jmp brackets_loop2
 
 end start
