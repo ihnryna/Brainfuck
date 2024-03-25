@@ -1,6 +1,5 @@
 .model tiny
 .data
-R equ 21h
 array dw 10000 dup(?) 
 buffer db 10000 dup(?) ; Буфер для читання файлу
 bytes_read dw ? ; Кількість прочитаних байт
@@ -13,28 +12,27 @@ start:
 reading:
     ; ds = PSP
     ; copy param
-    xor ch,ch
+    ;xor ch,ch
     mov cl, ds:[80h]   ; at offset 80h length of "args"
     xor bx, bx
 write_char:
     test cl, cl
-    jz write_end
+    ;jz write_end
     mov si, 81h        ; at offest 81h first char of "args"
     add si, cx
     mov dl, ds:[si]
-    cmp dl, 0Dh
-    jne noputzero
+    ;cmp dl, 0Dh
+    ;jne noputzero
     mov byte ptr ds:[si], 0
-noputzero:
-    dec cl
-    jmp short write_char
-
-write_end:
+;noputzero:
+    ;dec cl
+    ;jmp short write_char
+;write_end:
     ; Відкриття файлу для читання
     mov ah, 3Dh
     xor al, al ; режим читання
     mov dx, 82h
-    int R
+    int 21h
     mov bx, ax ; зберігаємо дескриптор файлу
 
     lea di, array
@@ -44,19 +42,15 @@ write_end:
 
     ; Читання з файлу
     mov ah, 3Fh
-    mov cx, 10000 ; читаємо 10000 байт
+    mov cx, 10000
     mov dx, offset buffer
-    int R
+    int 21h
     mov bytes_read, ax ; Збереження кількості прочитаних байт
-    ; Закриття файлу
-    ;mov ah, 3Eh
-    ;int 21h
 
     ;cld
     mov SI, offset buffer              ; SI буде вказувати на поточний елемент масиву
     add bytes_read, SI
     mov bx, offset array
-    ;xor bx, bx
 
 array_loop:
     ;MOV al, [buffer + SI]    
@@ -93,12 +87,12 @@ next2:
     jne go
     mov dx, 0Dh
     mov ah, 02h
-    int R
+    int 21h
 go:
     ; output
     mov dx, [bx]
     mov ah, 02h
-    int R
+    int 21h
     jmp array_loop_continue
 next3:
 
@@ -110,16 +104,12 @@ next3:
     lea dx, [bx]
     mov bx, 0h  ; stdin handle
     mov cx, 1   ; 1 byte to read
-    int R   ;  ax = number of bytes read
+    int 21h   ;  ax = number of bytes read
 
     pop bx
-    ;cmp ax, 0
-    ;jne noput
     test ax,ax
     jnz array_loop_continue ;noput
     mov [bx], -1
-;noput:
-;    jmp array_loop_continue
 next4:
 
     cmp AL, '['
@@ -135,66 +125,9 @@ array_loop_continue:
     jle array_loop        ; Повторюємо цикл, доки SI не дорівнює bytes_read
     ; Вихід з програми
     mov ax, 4C00h
-    int R
-
-;case_1:
-;    inc bx
-;    inc bx
-;    jmp short array_loop_continue
-
-;case_2:
-;    dec bx
-;    dec bx
-;    jmp short array_loop_continue
-
-;case_3:
-;    ;MOV ax, [bx]
-;    INC [bx]
-;    ;MOV [bx], ax
-;    jmp short array_loop_continue
-
-;case_4:
-;    ;MOV ax, [bx]
-;    dec [bx]
-;    ;MOV [bx], ax
-;    jmp short array_loop_continue
-
-;case_5:
-;    ;mov dx, [bx]
-;    cmp [bx], 0Dh
-;    je array_loop_continue
-;    cmp [bx], 0Ah
-;    jne go
-;    mov dx, 0Dh
-;    mov ah, 02h
-;    int R
-;go:
-;    ; output
-;    mov dx, [bx]
-;    mov ah, 02h
-;    int R
-;    jmp array_loop_continue
-
-;case_6:
-;    push bx
-;    and [bx], 0
-;    mov ah, 3Fh
-;    lea dx, [bx]
-;    mov bx, 0h  ; stdin handle
-;    mov cx, 1   ; 1 byte to read
-;    int R   ;  ax = number of bytes read
-;
-;    pop bx
-;    ;cmp ax, 0
-;    ;jne noput
-;    test ax,ax
-;    jnz noput
-;    mov [bx], -1
-;noput:
-;    jmp array_loop_continue
+    int 21h
 
 case_open:
-    ;MOV ax, [bx]
     cmp [bx], 0
     jne array_loop_continue
     inc brackets
@@ -211,7 +144,6 @@ brackets_loop:
     jmp short brackets_loop
 
 case_close:
-    ;MOV ax, [bx]
     cmp [bx], 0
     je cont2
     MOV al, [SI]  
