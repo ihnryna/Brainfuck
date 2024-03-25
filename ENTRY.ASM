@@ -47,6 +47,7 @@ write_char:
     mov bx, offset array
 
 array_loop:
+    xor cx, cx
     ;MOV al, [buffer + SI]    
     ;lodsb 
     mov al, [SI]
@@ -93,7 +94,7 @@ next3:
     cmp AL, ','
     jne next4 ;,
     push bx
-    and [bx], 0 
+    and [bx], cx
     mov ah, 3Fh
     lea dx, [bx]
     mov bx, 0h  ; stdin handle
@@ -110,7 +111,12 @@ next4:
     je case_open
 
     cmp AL, ']'
-    je case_close
+    jne array_loop_continue
+    pop ax
+    cmp [bx], cx
+    je array_loop_continue
+    mov SI, ax
+    dec SI
 
 array_loop_continue:    
     INC SI                 ; Перемістимо вказівник на наступний елемент масиву
@@ -122,11 +128,11 @@ array_loop_continue:
     int 21h
 
 case_open:
-    cmp [bx], 0
+    cmp [bx], cx
     jne array_loop_continue_br
     inc brackets
 brackets_loop:
-    cmp brackets,0
+    cmp brackets,cl
     je array_loop_continue
     inc SI
     MOV al, [SI]    
@@ -140,20 +146,8 @@ array_loop_continue_br:
     push SI
     jmp array_loop_continue
 
-case_close:
-    cmp [bx], 0
-    je cont2
-    pop SI
-    dec SI
-    jmp array_loop_continue
-
 inc_br:
     inc brackets
     jmp brackets_loop
-
-cont2:
-    pop ax
-    jmp array_loop_continue
-
 
 end start
