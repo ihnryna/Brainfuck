@@ -3,7 +3,6 @@
 array dw 10000 dup(?) 
 buffer db 10000 dup(?) ; Буфер для читання файлу
 bytes_read dw ? ; Кількість прочитаних байт
-brackets db ?
 
 .code
 ORG 100h
@@ -13,22 +12,18 @@ reading:
     ; ds = PSP
     ; copy param
     mov cl, ds:[80h]   ; at offset 80h length of "args"
-write_char:
     mov si, 81h        ; at offest 81h first char of "args"
     add si, cx
-    ;mov dl, ds:[si]
     mov byte ptr ds:[si], 0
-
 
     ; Відкриття файлу для читання
     mov ah, 3Dh
-    xor al, al ; режим читання
     mov dx, 82h
     int 21h
     mov bx, ax ; зберігаємо дескриптор файлу
 
     lea di, array
-    mov cx, 30003
+    mov cx, 30002
     xor ax, ax
     rep stosb
 
@@ -44,14 +39,13 @@ write_char:
     add bytes_read, SI
     mov bx, offset array
 
-array_loop:
     xor cx, cx
-    ;MOV al, [buffer + SI]    
-    ;lodsb 
-    mov al, [SI]
 
+array_loop:
+    lodsb 
+    ;mov al, [SI]
     
-    cmp brackets,cl
+    cmp cx,0
     jne brackets_loop
 
     CMP AL, '>'
@@ -96,13 +90,14 @@ next3:
     cmp AL, ','
     jne next4 ;,
     push bx
-    and [bx], cx
+    push cx
+    and [bx], 0
     mov ah, 3Fh
     lea dx, [bx]
     mov bx, 0h  ; stdin handle
     mov cx, 1   ; 1 byte to read
     int 21h   ;  ax = number of bytes read
-
+    pop cx
     pop bx
     test ax,ax
     jnz array_loop_continue ;noput
@@ -111,9 +106,9 @@ next4:
 
     cmp AL, '['
     jne next6
-    cmp [bx], cx
+    cmp [bx], 0
     jne array_loop_continue_br
-    inc brackets
+    inc cx
     jmp array_loop_continue
 array_loop_continue_br:
     push SI
@@ -122,31 +117,26 @@ next6:
     cmp AL, ']'
     jne array_loop_continue
     pop ax
-    cmp [bx], cx
+    cmp [bx], 0
     je array_loop_continue
     mov SI, ax
     dec SI
 
-    jmp array_loop_continue
+array_loop_continue:    
+    ;INC SI                 ; Перемістимо вказівник на наступний елемент масиву
+    cmp SI, bytes_read
+    jle array_loop      ; Повторюємо цикл, доки SI не дорівнює bytes_read
+    ; Вихід з програми
+    ret
 
 brackets_loop: 
     CMP AL, '['
     jne next5
-    inc brackets
+    inc cx
 next5:
     CMP AL, ']'
     jne array_loop_continue
-    dec brackets
+    dec cx
+    jmp array_loop_continue
 
-array_loop_continue:    
-    INC SI                 ; Перемістимо вказівник на наступний елемент масиву
-    ;lodsb
-    cmp SI, bytes_read
-    jle array_loop_link      ; Повторюємо цикл, доки SI не дорівнює bytes_read
-    ; Вихід з програми
-    ret
-
-array_loop_link:
-    jmp array_loop
-
-end start
+end start ; not the mosquito again!!!!🦟🦟🦟🦟🦟🦟🦟🦟 bzzzzzzzzzzz
