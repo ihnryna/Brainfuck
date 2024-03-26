@@ -32,77 +32,77 @@ reading:
     int 21h
 
     ;cld
-    mov SI, dx             ; SI буде вказувати на поточний елемент масиву
-    mov bx, offset array
+    mov SI, dx             ; SI буде вказувати на поточний елемент масиву (offset buffer)
+    mov di, offset array
 
     xor cx, cx
-    xor di, di
+    xor bx, bx
 
 array_loop:
     lodsb 
     ;mov al, [SI]
     
-    cmp cx, di
+    cmp cx, bx
     jne brackets_loop
 
     CMP AL, '>'
     jne next0 ;>
-    inc bx
-    inc bx
+    inc di
+    inc di
 next0:
 
     CMP AL, '<'
     jne next1 ;<
-    dec bx
-    dec bx
+    dec di
+    dec di
 next1:
 
     CMP AL, '+'
     jne next ;+
-    INC [bx]
+    INC [di]
 next:
 
     CMP AL, '-'
     jne next2 ;-
-    dec [bx]
+    dec [di]
 next2:
 
     cmp AL, '.'
     jne next3 ;.
-    cmp [bx], 0Dh
+    cmp [di], 0Dh
     je next3
     mov ah, 02h
-    cmp [bx], 0Ah
+    cmp [di], 0Ah
     jne go
     mov dx, 0Dh
     int 21h
 go:
     ; output
-    mov dx, [bx]
+    mov dx, [di]
     int 21h
     jmp array_loop_continue
 next3:
 
     cmp AL, ','
     jne next4 ;,
-    push bx
-    and [bx], di
+    ;push di
+    and [di], bx
     mov ah, 3Fh
-    lea dx, [bx]
-    mov bx, di  ; stdin handle
+    lea dx, [di]
+    ;mov bx, di  ; stdin handle
     inc cx    ;mov cx, 1   ; 1 byte to read
     int 21h   ;  ax = number of bytes read
     dec cx
-    pop bx
+    ;pop bx
     test ax,ax
     jnz array_loop_continue ;noput
-    mov [bx], -1
+    mov [di], -1
 next4:
 
     cmp AL, '['
     jne next6
     push SI
-    cmp [bx], di
+    cmp [di], bx
     jne array_loop_continue
     inc cx
     ;jmp array_loop_continue
@@ -112,7 +112,7 @@ next6:
     cmp AL, ']'
     jne array_loop_continue
     pop ax
-    cmp [bx], di
+    cmp [di], bx
     je array_loop_continue
     mov SI, ax
     dec SI
@@ -120,7 +120,7 @@ next6:
 
 array_loop_continue:    
     ;INC SI
-    cmp [SI], di
+    cmp [SI], bx
     jne array_loop      
     ; Вихід з програми
     ret
