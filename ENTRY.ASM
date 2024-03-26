@@ -13,12 +13,10 @@ reading:
     ; ds = PSP
     ; copy param
     mov cl, ds:[80h]   ; at offset 80h length of "args"
-    xor bx, bx
 write_char:
-    test cl, cl
     mov si, 81h        ; at offest 81h first char of "args"
     add si, cx
-    mov dl, ds:[si]
+    ;mov dl, ds:[si]
     mov byte ptr ds:[si], 0
 
 
@@ -51,6 +49,10 @@ array_loop:
     ;MOV al, [buffer + SI]    
     ;lodsb 
     mov al, [SI]
+
+    
+    cmp brackets,cl
+    jne brackets_loop
 
     CMP AL, '>'
     jne next0 ;>
@@ -108,7 +110,14 @@ next3:
 next4:
 
     cmp AL, '['
-    je case_open
+    jne next6
+    cmp [bx], cx
+    jne array_loop_continue_br
+    inc brackets
+    jmp array_loop_continue
+array_loop_continue_br:
+    push SI
+next6:
 
     cmp AL, ']'
     jne array_loop_continue
@@ -118,36 +127,26 @@ next4:
     mov SI, ax
     dec SI
 
+    jmp array_loop_continue
+
+brackets_loop: 
+    CMP AL, '['
+    jne next5
+    inc brackets
+next5:
+    CMP AL, ']'
+    jne array_loop_continue
+    dec brackets
+
 array_loop_continue:    
     INC SI                 ; Перемістимо вказівник на наступний елемент масиву
     ;lodsb
     cmp SI, bytes_read
-    jle array_loop        ; Повторюємо цикл, доки SI не дорівнює bytes_read
+    jle array_loop_link      ; Повторюємо цикл, доки SI не дорівнює bytes_read
     ; Вихід з програми
-    mov ax, 4C00h
-    int 21h
+    ret
 
-case_open:
-    cmp [bx], cx
-    jne array_loop_continue_br
-    inc brackets
-brackets_loop:
-    cmp brackets,cl
-    je array_loop_continue
-    inc SI
-    MOV al, [SI]    
-    CMP AL, '['
-    je inc_br
-    CMP AL, ']'
-    jne short brackets_loop
-    dec brackets
-    jmp short brackets_loop
-array_loop_continue_br:
-    push SI
-    jmp array_loop_continue
-
-inc_br:
-    inc brackets
-    jmp brackets_loop
+array_loop_link:
+    jmp array_loop
 
 end start
