@@ -43,7 +43,7 @@ array_loop:
     ;mov al, [SI]
     
     cmp cx, bx
-    jne brackets_loop
+    jne next4
 
     CMP AL, '>'
     jne next0 ;>
@@ -99,19 +99,34 @@ next3:
     mov [di], -1
 next4:
 
+;_______________open______________________
     cmp AL, '['
     jne next6
     push SI
+    
+    cmp cx, bx
+    je next5
+    inc cx
+    jmp array_loop_continue
+next5:
+
     cmp [di], bx
     jne array_loop_continue
     inc cx
-    ;jmp array_loop_continue
-;array_loop_continue_br:
 next6:
 
+
+;_______________close______________________
     cmp AL, ']'
     jne array_loop_continue
     pop ax
+
+    cmp cx, bx
+    je next55
+    dec cx
+    ;jmp array_loop_continue
+next55:
+
     cmp [di], bx
     je array_loop_continue
     mov SI, ax
@@ -125,16 +140,16 @@ array_loop_continue:
     ; Вихід з програми
     ret
 
-brackets_loop: 
-    CMP AL, '['
-    jne next5
-    push SI
-    inc cx
-next5:
-    CMP AL, ']'
-    jne array_loop_continue
-    pop ax
-    dec cx
-    jmp array_loop_continue
+;brackets_loop: 
+;    CMP AL, '['
+;    jne next5
+;    push SI
+;    inc cx
+;next5:
+;    CMP AL, ']'
+;    jne array_loop_continue
+;    pop ax
+;    dec cx
+;    jmp array_loop_continue
 
 end start ; not the mosquito again!!!!🦟🦟🦟🦟🦟🦟🦟🦟 bzzzzzzzzzzz
