@@ -2,7 +2,6 @@
 .data
 array dw 10000 dup(?) 
 buffer db 10000 dup(?) ; Буфер для читання файлу
-bytes_read dw ? ; Кількість прочитаних байт
 
 .code
 ORG 100h
@@ -23,7 +22,7 @@ reading:
     mov bx, ax ; зберігаємо дескриптор файлу
 
     lea di, array
-    mov cx, 30002
+    mov cx, 30000
     xor ax, ax
     rep stosb
 
@@ -32,20 +31,19 @@ reading:
     mov cx, 10000
     mov dx, offset buffer
     int 21h
-    mov bytes_read, ax ; Збереження кількості прочитаних байт
 
     ;cld
     mov SI, offset buffer              ; SI буде вказувати на поточний елемент масиву
-    add bytes_read, SI
     mov bx, offset array
 
     xor cx, cx
+    xor di, di
 
 array_loop:
-    lodsb 
+    lodsb
     ;mov al, [SI]
     
-    cmp cx,0
+    cmp cx,di
     jne brackets_loop
 
     CMP AL, '>'
@@ -75,23 +73,21 @@ next2:
     cmp [bx], 0Dh
     je array_loop_continue
     cmp [bx], 0Ah
+    mov ah, 02h
     jne go
     mov dx, 0Dh
-    mov ah, 02h
     int 21h
 go:
     ; output
     mov dx, [bx]
-    mov ah, 02h
     int 21h
-    jmp array_loop_continue
 next3:
 
     cmp AL, ','
     jne next4 ;,
     push bx
     push cx
-    and [bx], 0
+    and [bx], di
     mov ah, 3Fh
     lea dx, [bx]
     mov bx, 0h  ; stdin handle
@@ -106,7 +102,7 @@ next4:
 
     cmp AL, '['
     jne next6
-    cmp [bx], 0
+    cmp [bx], di
     jne array_loop_continue_br
     inc cx
     jmp array_loop_continue
@@ -117,15 +113,14 @@ next6:
     cmp AL, ']'
     jne array_loop_continue
     pop ax
-    cmp [bx], 0
+    cmp [bx], di
     je array_loop_continue
     mov SI, ax
     dec SI
 
 array_loop_continue:    
-    ;INC SI                 ; Перемістимо вказівник на наступний елемент масиву
-    cmp SI, bytes_read
-    jle array_loop      ; Повторюємо цикл, доки SI не дорівнює bytes_read
+    cmp [SI], di
+    jne array_loop      ; Повторюємо цикл, доки SI не дорівнює bytes_read
     ; Вихід з програми
     ret
 
