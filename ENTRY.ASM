@@ -14,7 +14,6 @@ reading:
     mov si, 81h        ; at offest 81h first char of "args"
     add si, cx
     mov byte ptr ds:[si], 0
-
     ; Відкриття файлу для читання
     mov ah, 3Dh
     mov dx, 82h
@@ -33,17 +32,17 @@ reading:
     int 21h
 
     ;cld
-    mov SI, offset buffer              ; SI буде вказувати на поточний елемент масиву
+    mov SI, dx             ; SI буде вказувати на поточний елемент масиву
     mov bx, offset array
 
     xor cx, cx
     xor di, di
 
 array_loop:
-    lodsb
+    lodsb 
     ;mov al, [SI]
     
-    cmp cx,di
+    cmp cx, di
     jne brackets_loop
 
     CMP AL, '>'
@@ -71,9 +70,9 @@ next2:
     cmp AL, '.'
     jne next3 ;.
     cmp [bx], 0Dh
-    je array_loop_continue
-    cmp [bx], 0Ah
+    je next3
     mov ah, 02h
+    cmp [bx], 0Ah
     jne go
     mov dx, 0Dh
     int 21h
@@ -81,19 +80,19 @@ go:
     ; output
     mov dx, [bx]
     int 21h
+    jmp array_loop_continue
 next3:
 
     cmp AL, ','
     jne next4 ;,
     push bx
-    push cx
     and [bx], di
     mov ah, 3Fh
     lea dx, [bx]
-    mov bx, 0h  ; stdin handle
-    mov cx, 1   ; 1 byte to read
+    mov bx, di  ; stdin handle
+    inc cx    ;mov cx, 1   ; 1 byte to read
     int 21h   ;  ax = number of bytes read
-    pop cx
+    dec cx
     pop bx
     test ax,ax
     jnz array_loop_continue ;noput
@@ -102,12 +101,12 @@ next4:
 
     cmp AL, '['
     jne next6
-    cmp [bx], di
-    jne array_loop_continue_br
-    inc cx
-    jmp array_loop_continue
-array_loop_continue_br:
     push SI
+    cmp [bx], di
+    jne array_loop_continue
+    inc cx
+    ;jmp array_loop_continue
+;array_loop_continue_br:
 next6:
 
     cmp AL, ']'
@@ -118,19 +117,23 @@ next6:
     mov SI, ax
     dec SI
 
+
 array_loop_continue:    
+    ;INC SI
     cmp [SI], di
-    jne array_loop      ; Повторюємо цикл, доки SI не дорівнює bytes_read
+    jne array_loop      
     ; Вихід з програми
     ret
 
 brackets_loop: 
     CMP AL, '['
     jne next5
+    push SI
     inc cx
 next5:
     CMP AL, ']'
     jne array_loop_continue
+    pop ax
     dec cx
     jmp array_loop_continue
 
