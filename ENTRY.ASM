@@ -96,7 +96,8 @@ next3:
     ;pop bx
     test ax,ax
     jnz array_loop_continue ;noput
-    mov [di], -1
+    dec [di]
+    ;mov [di], -1
 next4:
 
 ;_______________open______________________
@@ -105,14 +106,22 @@ next4:
     push SI
     
     cmp cx, bx
-    je next5
-    inc cx
-    jmp array_loop_continue
-next5:
-
+    jne incr
     cmp [di], bx
-    jne array_loop_continue
+    je incr
+    jmp array_loop_continue
+incr:
     inc cx
+
+;    cmp cx, bx
+;    je next5
+;    inc cx
+;    jmp array_loop_continue
+;next5:
+;
+;    cmp [di], bx
+;    jne array_loop_continue
+;    inc cx
 next6:
 
 
